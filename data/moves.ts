@@ -5087,7 +5087,7 @@ export const Moves: {[moveid: string]: MoveData} = {
 		name: "Pained Scream",
 		pp: 5,
 		priority: 1,
-		flags: {contact: 1, protect: 1, mirror: 1},
+		flags: {contact: 1, protect: 1, mirror: 1, sound: 1, bypasssub: 1},
 		secondary: null,
 		target: "normal",
 		type: "Electric",
