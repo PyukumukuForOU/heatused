@@ -16156,7 +16156,7 @@ export const Moves: {[moveid: string]: MoveData} = {
 		priority: 0,
 		flags: {protect: 1, reflectable: 1, mirror: 1},
 		basePowerCallback(pokemon, target, move) {
-			if (pokemon.species.name === 'Mimikyu-Exercise' &&
+			if (pokemon.species.name === 'Mimikyu-Busted' &&
 				!pokemon.transformed) {
 				return move.basePower + 70;
 			}
