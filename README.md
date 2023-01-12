@@ -1,2 +1,2 @@
-# heatused
-The repository containing the TU metagame.
+# spb
+The repository containing the Super Pyukumuku Bros code.
