@@ -15440,7 +15440,7 @@ export const Moves: {[moveid: string]: MoveData} = {
 		pp: 10,
 		priority: 0,
 		flags: {nonsky: 1},
-		terrain: 'riceyterain',
+		terrain: 'riceyterrain',
 		condition: {
 			duration: 5,
 			durationCallback(source, effect) {
@@ -15449,8 +15449,10 @@ export const Moves: {[moveid: string]: MoveData} = {
 				}
 				return 5;
 			},
-			onBasePower(basePower, attacker, defender, move) {
+			onBeforeMove(pokemon, target, move) {
 				move.drain = [1, 2];
+			},
+			onBasePower(basePower, attacker, defender, move) {
 				if (move.type === 'Grass' && attacker.isGrounded()) {
 					this.debug('ricey terrain boost');
 					return this.chainModify([5325, 4096]);
