@@ -4132,6 +4132,26 @@ export const Moves: {[moveid: string]: MoveData} = {
 		type: "Dragon",
 		contestType: "Cool",
 	},
+	shove: {
+		num: 907,
+		accuracy: 90,
+		basePower: 0,
+		category: "Status",
+		name: "Shove",
+		pp: 20,
+		priority: 0,
+		flags: {reflectable: 1, mirror: 1, bypasssub: 1, allyanim: 1},
+		forceSwitch: true,
+		boosts: {
+			spa: 1,
+			spe: 1,
+		},
+		secondary: null,
+		target: "normal",
+		type: "Normal",
+		zMove: {boost: {spa:1, spe:1, atk: 1, spd: 1, def:1}},
+		contestType: "Cool",
+	},
 	dragondance: {
 		num: 349,
 		accuracy: true,
@@ -6699,6 +6719,31 @@ export const Moves: {[moveid: string]: MoveData} = {
 		name: "Gigaton Hammer",
 		pp: 5,
 		priority: 0,
+		flags: {protect: 1, mirror: 1},
+		onDisableMove(pokemon) {
+			if (pokemon.lastMove?.id === 'gigatonhammer') pokemon.disableMove('gigatonhammer');
+		},
+		beforeMoveCallback(pokemon) {
+			if (pokemon.lastMove?.id === 'gigatonhammer') pokemon.addVolatile('gigatonhammer');
+		},
+		onAfterMove(pokemon) {
+			if (pokemon.removeVolatile('gigatonhammer')) {
+				this.add('-hint', "Some effects can force a Pokemon to use Gigaton Hammer again in a row.");
+			}
+		},
+		condition: {},
+		secondary: null,
+		target: "normal",
+		type: "Steel",
+	},
+	gigatonsmack: {
+		num: 910,
+		accuracy: 100,
+		basePower: 80,
+		category: "Physical",
+		name: "Gigaton Smacker",
+		pp: 5,
+		priority: 2,
 		flags: {protect: 1, mirror: 1},
 		onDisableMove(pokemon) {
 			if (pokemon.lastMove?.id === 'gigatonhammer') pokemon.disableMove('gigatonhammer');
@@ -9961,6 +10006,23 @@ export const Moves: {[moveid: string]: MoveData} = {
 		target: "normal",
 		type: "Dark",
 	},
+	drakejaws: {
+		num: 908,
+		accuracy: 100,
+		basePower: 90,
+		category: "Physical",
+		name: "Drake Jaws",
+		pp: 10,
+		priority: 0,
+		flags: {contact: 1, protect: 1, mirror: 1, slicing: 1},
+		onHit(target, source, move) {
+			source.addVolatile('trapped', target, move, 'trapper');
+			target.addVolatile('trapped', source, move, 'trapper');
+		},
+		secondary: null,
+		target: "normal",
+		type: "Dark",
+	},
 	jetpunch: {
 		num: 857,
 		accuracy: 100,
@@ -10325,6 +10387,36 @@ export const Moves: {[moveid: string]: MoveData} = {
 		flags: {contact: 1, protect: 1, mirror: 1, slicing: 1},
 		critRatio: 2,
 		secondary: null,
+		target: "normal",
+		type: "Grass",
+		contestType: "Cool",
+	},
+	ricecutter: {
+		num: 909,
+		accuracy: 100,
+		basePower: 90,
+		category: "Physical",
+		name: "Leaf Rice Cutter",
+		pp: 15,
+		priority: 0,
+		flags: {contact: 1, protect: 1, mirror: 1, slicing: 1},
+		condition: {
+			onStart(pokemon, source) {
+				this.add('-start', pokemon, 'move: Salt Cure', '[of] ' + source);
+			},
+			onResidualOrder: 13,
+			onResidual(pokemon) {
+				this.damage(pokemon.baseMaxhp / (pokemon.hasType(['Water', 'Steel']) ? 4 : 8));
+			},
+			onEnd(pokemon) {
+				this.add('-end', pokemon, 'move: Salt Cure');
+			},
+		},
+		secondary: {
+			chance: 100,
+			volatileStatus: 'saltcure',
+		},
+		critRatio: 2,
 		target: "normal",
 		type: "Grass",
 		contestType: "Cool",
@@ -13887,6 +13979,22 @@ export const Moves: {[moveid: string]: MoveData} = {
 		target: "normal",
 		type: "Normal",
 	},
+	judgementcutend: {
+		num: 908,
+		accuracy: 90,
+		basePower: 20,
+		category: "Physical",
+		name: "Judgement Cut End",
+		pp: 10,
+		priority: 0,
+		critRatio: 2,
+		flags: {contact: 1, protect: 1, mirror: 1, slicing: 1},
+		multihit: 10,
+		multiaccuracy: true,
+		secondary: null,
+		target: "normal",
+		type: "Dragon",
+	},
 	populationbomb: {
 		num: 860,
 		accuracy: 90,
@@ -16036,6 +16144,28 @@ export const Moves: {[moveid: string]: MoveData} = {
 		target: "normal",
 		type: "Ground",
 		zMove: {boost: {evasion: 1}},
+		contestType: "Cute",
+	},
+	mimikyumove: {
+		num: 28,
+		accuracy: 100,
+		basePower: 70,
+		category: "Physical",
+		name: "Pillow Smack",
+		pp: 15,
+		priority: 0,
+		flags: {protect: 1, reflectable: 1, mirror: 1},
+		basePowerCallback(pokemon, target, move) {
+			if (pokemon.species.name === 'Mimikyu-Exercise' &&
+				!pokemon.transformed) {
+				return move.basePower + 70;
+			}
+			return move.basePower;
+		},
+		secondary: null,
+		target: "normal",
+		type: "Fairy",
+		zMove: {basePower: 130},
 		contestType: "Cute",
 	},
 	sandsearstorm: {
@@ -19309,6 +19439,7 @@ export const Moves: {[moveid: string]: MoveData} = {
 		category: "Physical",
 		name: "Tail Slap",
 		pp: 10,
+
 		priority: 0,
 		flags: {contact: 1, protect: 1, mirror: 1},
 		multihit: [2, 5],
