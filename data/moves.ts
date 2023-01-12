@@ -15431,6 +15431,39 @@ export const Moves: {[moveid: string]: MoveData} = {
 		target: "self",
 		type: "Normal",
 	},
+	riceyterrain: {
+		num: 1000,
+		accuracy: true,
+		basePower: 0,
+		category: "Status",
+		name: "Ricey Terrain",
+		pp: 10,
+		priority: 0,
+		flags: {nonsky: 1},
+		terrain: 'riceyterain',
+		condition: {
+			duration: 5,
+			durationCallback(source, effect) {
+				if (source?.hasItem('terrainextender')) {
+					return 8;
+				}
+				return 5;
+			},
+			onBasePower(basePower, attacker, defender, move) {
+				move.drain = [1, 2];
+				if (move.type === 'Grass' && attacker.isGrounded()) {
+					this.debug('ricey terrain boost');
+					return this.chainModify([5325, 4096]);
+				}
+			},
+			onBasePowerPriority: 6,
+		},
+		secondary: null,
+		target: "all",
+		type: "Grass",
+		zMove: {boost: {def: 1}},
+		contestType: "Beautiful",
+	},
 	risingvoltage: {
 		num: 804,
 		accuracy: 100,
