@@ -238,6 +238,88 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 		rating: 2,
 		num: 165,
 	},
+	apexpredator:
+	{
+		onFoeTryMove(target, source, move) {
+			const targetAllExceptions = ['perishsong', 'flowershield', 'rototiller'];
+			if (move.target === 'foeSide' || (move.target === 'all' && !targetAllExceptions.includes(move.id))) {
+				return;
+			}
+
+			const armorTailHolder = this.effectState.target;
+			if ((source.isAlly(armorTailHolder) || move.target === 'all') && move.priority > 0.1) {
+				this.attrLastMove('[still]');
+				this.add('cant', armorTailHolder, 'ability: Apex Predator', move, '[of] ' + target);
+				return false;
+			}
+		},
+		onStart(pokemon) {
+			this.singleEvent('WeatherChange', this.effect, this.effectState, pokemon);
+			pokemon.side.addSideCondition('tailwind');
+		},
+		onWeatherChange(pokemon) {
+			if (pokemon.transformed) return;
+			// Protosynthesis is not affected by Utility Umbrella
+			if (this.field.isWeather('sunnyday')) {
+				pokemon.addVolatile('protosynthesis');
+			} else if (!pokemon.volatiles['protosynthesis']?.fromBooster) {
+				pokemon.removeVolatile('protosynthesis');
+			}
+		},
+		onEnd(pokemon) {
+			delete pokemon.volatiles['protosynthesis'];
+			this.add('-end', pokemon, 'Protosynthesis', '[silent]');
+		},
+		condition: {
+			noCopy: true,
+			onStart(pokemon, source, effect) {
+				if (effect?.id === 'boosterenergy') {
+					this.effectState.fromBooster = true;
+					this.add('-activate', pokemon, 'ability: Protosynthesis', '[fromitem]');
+				} else {
+					this.add('-activate', pokemon, 'ability: Protosynthesis');
+				}
+				this.effectState.bestStat = pokemon.getBestStat(false, true);
+				this.add('-start', pokemon, 'protosynthesis' + this.effectState.bestStat);
+			},
+			onModifyAtkPriority: 5,
+			onModifyAtk(atk, source, target, move) {
+				if (this.effectState.bestStat !== 'atk') return;
+				this.debug('Protosynthesis atk boost');
+				return this.chainModify([5325, 4096]);
+			},
+			onModifyDefPriority: 6,
+			onModifyDef(def, target, source, move) {
+				if (this.effectState.bestStat !== 'def') return;
+				this.debug('Protosynthesis def boost');
+				return this.chainModify([5325, 4096]);
+			},
+			onModifySpAPriority: 5,
+			onModifySpA(relayVar, source, target, move) {
+				if (this.effectState.bestStat !== 'spa') return;
+				this.debug('Protosynthesis spa boost');
+				return this.chainModify([5325, 4096]);
+			},
+			onModifySpDPriority: 6,
+			onModifySpD(relayVar, target, source, move) {
+				if (this.effectState.bestStat !== 'spd') return;
+				this.debug('Protosynthesis spd boost');
+				return this.chainModify([5325, 4096]);
+			},
+			onModifySpe(spe, pokemon) {
+				if (this.effectState.bestStat !== 'spe') return;
+				this.debug('Protosynthesis spe boost');
+				return this.chainModify(1.5);
+			},
+			onEnd(pokemon) {
+				this.add('-end', pokemon, 'Protosynthesis');
+			},
+		},
+		isPermanent: true,
+		name: "Apex Predator",
+		rating: 5,
+		num: 307,
+	},
 	asoneglastrier: {
 		onPreStart(pokemon) {
 			this.add('-ability', pokemon, 'As One');
@@ -378,6 +460,55 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 		rating: 3.5,
 		num: 224,
 	},
+	bedroom: {
+		onDamagePriority: 1,
+		onDamage(damage, target, source, effect) {
+			if (
+				effect && effect.effectType === 'Move' &&
+				['mimikyu', 'mimikyutotem'].includes(target.species.id) && !target.transformed
+			) {
+				this.add('-activate', target, 'ability: Disguise');
+				this.effectState.busted = true;
+				target.setBoost({atk: 2, spe: 2});
+				return 0;
+			}
+		},
+		onCriticalHit(target, source, move) {
+			if (!target) return;
+			if (!['mimikyu', 'mimikyutotem'].includes(target.species.id) || target.transformed) {
+				return;
+			}
+			const hitSub = target.volatiles['substitute'] && !move.flags['bypasssub'] && !(move.infiltrates && this.gen >= 6);
+			if (hitSub) return;
+
+			if (!target.runImmunity(move.type)) return;
+			return false;
+		},
+		onEffectiveness(typeMod, target, type, move) {
+			if (!target || move.category === 'Status') return;
+			if (!['mimikyu', 'mimikyutotem'].includes(target.species.id) || target.transformed) {
+				return;
+			}
+
+			const hitSub = target.volatiles['substitute'] && !move.flags['bypasssub'] && !(move.infiltrates && this.gen >= 6);
+			if (hitSub) return;
+
+			if (!target.runImmunity(move.type)) return;
+			return 0;
+		},
+		onUpdate(pokemon) {
+			if (['mimikyu', 'mimikyutotem'].includes(pokemon.species.id) && this.effectState.busted) {
+				const speciesid = pokemon.species.id === 'mimikyutotem' ? 'Mimikyu-Busted-Totem' : 'Mimikyu-Busted';
+				pokemon.formeChange(speciesid, this.effect, true);
+				this.damage(pokemon.baseMaxhp / 8, pokemon, pokemon, this.dex.species.get(speciesid));
+			}
+		},
+		isBreakable: true,
+		isPermanent: true,
+		name: "Bedroom",
+		rating: 5,
+		num: 303,
+	},
 	berserk: {
 		onDamage(damage, target, source, effect) {
 			if (
@@ -458,6 +589,28 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 		name: "Bulletproof",
 		rating: 3,
 		num: 171,
+	},
+	cinner: {
+		onBasePowerPriority: 30,
+		onBasePower(basePower, attacker, defender, move) {
+			const basePowerAfterMultiplier = this.modify(basePower, this.event.modifier);
+			this.debug('Base Power: ' + basePowerAfterMultiplier);
+			if (basePowerAfterMultiplier <= 60) {
+				this.debug('Technician boost');
+				return this.chainModify(1.5);
+			}
+		},
+		onModifyMove(move) {
+			if (move.multihit && Array.isArray(move.multihit) && move.multihit.length) {
+				move.multihit = move.multihit[1];
+			}
+			if (move.multiaccuracy) {
+				delete move.multiaccuracy;
+			}
+		},
+		name: "Cinner",
+		rating: 5,
+		num: 300,
 	},
 	cheekpouch: {
 		onEatItem(item, pokemon) {
@@ -1050,6 +1203,31 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 		rating: 3,
 		num: 87,
 	},
+	dumbass: {
+		onAnyModifyBoost(boosts, pokemon) {
+			const unawareUser = this.effectState.target;
+			if (unawareUser === pokemon) return;
+			if (unawareUser === this.activePokemon && pokemon === this.activeTarget) {
+				boosts['def'] = 0;
+				boosts['spd'] = 0;
+				boosts['evasion'] = 0;
+			}
+			if (pokemon === this.activePokemon && unawareUser === this.activeTarget) {
+				boosts['atk'] = 0;
+				boosts['def'] = 0;
+				boosts['spa'] = 0;
+				boosts['accuracy'] = 0;
+			}
+		},
+		onModifyMove(move, pokemon) {
+			const bestStat = pokemon.getBestStat(true, true);
+			move.overrideOffensiveStat = bestStat;
+		},
+		name: "Dumbass",
+		isBreakable: true,
+		rating: 5,
+		num: 305,
+	},
 	earlybird: {
 		name: "Early Bird",
 		// Implemented in statuses.js
@@ -1146,6 +1324,17 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 		name: "Filter",
 		rating: 3,
 		num: 111,
+	},
+	firststrike: {
+		onModifyMove(move, pokemon) {
+			if (pokemon.activeMoveActions <= 1) {
+				move.priority += 1;
+				move.basePower *= 1.2;
+			}
+		},
+		name: "First Strike",
+		rating: 5,
+		num: 306,
 	},
 	flamebody: {
 		onDamagingHit(damage, target, source, move) {
@@ -1438,6 +1627,18 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 		name: "Galvanize",
 		rating: 4,
 		num: 206,
+	},
+	gamerrage: {
+		onHit(target, source, move) {
+			if (!target.hp) return;
+			if (!move.damage && !move.damageCallback && target.getMoveHitData(move).typeMod > 0) {
+				target.setBoost({spa: 2, spe: 2});
+				this.add('-setboost', target, 'spa', 2, '[from] ability: Gamer Rage');
+			}
+		},
+		name: "Gamer Rage",
+		rating: 5,
+		num: 299,
 	},
 	gluttony: {
 		name: "Gluttony",
@@ -1913,6 +2114,27 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 		name: "Imposter",
 		rating: 5,
 		num: 150,
+	},
+	indeed: {
+		onStart(pokemon) {
+			this.boost({atk: 1, spe: 1}, pokemon)
+		},
+		onFoeAfterBoost(boost, target, source, effect) {
+			if (effect?.fullname?.endsWith('Opportunist') || effect?.fullname?.endsWith('Mirror Herb')) return;
+			const pokemon = this.effectState.target;
+			const positiveBoosts: Partial<BoostsTable> = {};
+			let i: BoostID;
+			for (i in boost) {
+				if (boost[i]! > 0) {
+					positiveBoosts[i] = boost[i];
+				}
+			}
+			if (Object.keys(positiveBoosts).length < 1) return;
+			this.boost(positiveBoosts, pokemon);
+		},
+		name: "Indeed",
+		rating: 5,
+		num: 301,
 	},
 	infiltrator: {
 		onModifyMove(move) {
@@ -2744,6 +2966,25 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 		rating: 1.5,
 		num: 12,
 	},
+	onepunch:
+	{
+		onBasePowerPriority: 23,
+		onBasePower(basePower, attacker, defender, move) {
+			if (move.flags['punch']) {
+				this.debug('One Punch boost');
+				return this.chainModify(4);
+			}
+		},
+		onModifyMove(move, pokemon) {
+			if (move.flags['punch']) {
+				const bestStat = pokemon.getBestStat(true, true);
+				move.overrideOffensiveStat = bestStat;
+			}
+		},
+		name: "One Punch",
+		rating: 5,
+		num: 308,
+	},
 	opportunist: {
 		onFoeAfterBoost(boost, target, source, effect) {
 			if (effect?.fullname?.endsWith('Opportunist') || effect?.fullname?.endsWith('Mirror Herb')) return;
@@ -3498,6 +3739,14 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 		rating: 4.5,
 		num: 144,
 	},
+	riceysurge: {
+		onStart(source) {
+			this.field.setTerrain('riceyterrain');
+		},
+		name: "Ricey Surge",
+		rating: 5,
+		num: 302,
+	},
 	ripen: {
 		onTryHeal(damage, target, source, effect) {
 			if (!effect) return;
@@ -3785,6 +4034,22 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 		rating: 3.5,
 		num: 32,
 	},
+	serratedblades: {
+		onPrepareHit(source, target, move) {
+			if (!move?.flags['contact'] || move.target === 'self') return;
+			target.addVolatile('saltcure');
+		},
+		onBasePowerPriority: 19,
+		onBasePower(basePower, attacker, defender, move) {
+			if (move.flags['slicing']) {
+				this.debug('Shapness boost');
+				return this.chainModify(1.2);
+			}
+		},
+		name: "Serrated Blades",
+		rating: 5,
+		num: 309,
+	},
 	shadowshield: {
 		onSourceModifyDamage(damage, source, target, move) {
 			if (target.hp >= target.maxhp) {
@@ -3931,6 +4196,27 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 		name: "Simple",
 		rating: 4,
 		num: 86,
+	},
+	sindeviltrigger: {
+		onResidualOrder: 29,
+		onResidual(pokemon) {
+			if (pokemon.baseSpecies.baseSpecies !== 'Zygarde' || pokemon.transformed || !pokemon.hp) return;
+			if (pokemon.species.id === 'zygardecomplete' || pokemon.hp > pokemon.maxhp / 2) return;
+			this.add('-activate', pokemon, 'ability: Power Construct');
+			pokemon.formeChange('Zygarde-Complete', this.effect, true);
+			pokemon.baseMaxhp = Math.floor(Math.floor(
+				2 * pokemon.species.baseStats['hp'] + pokemon.set.ivs['hp'] + Math.floor(pokemon.set.evs['hp'] / 4) + 100
+			) * pokemon.level / 100 + 10);
+			const newMaxHP = pokemon.volatiles['dynamax'] ? (2 * pokemon.baseMaxhp) : pokemon.baseMaxhp;
+			pokemon.hp = newMaxHP - (pokemon.maxhp - pokemon.hp);
+			pokemon.maxhp = newMaxHP;
+			pokemon.setBoost({atk: 2, spe: 2});
+			this.add('-heal', pokemon, pokemon.getHealth, '[silent]');
+		},
+		isPermanent: true,
+		name: "Sin Devil Trigger",
+		rating: 5,
+		num: 304,
 	},
 	skilllink: {
 		onModifyMove(move) {
