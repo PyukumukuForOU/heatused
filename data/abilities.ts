@@ -78,6 +78,27 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 		rating: 2,
 		num: 106,
 	},
+	derision: {
+		onResidualOrder: 28,
+		onResidualSubOrder: 2,
+		onResidual(pokemon) {
+			let activated = false;
+			for (const target of pokemon.adjacentFoes()) {
+				if (!activated) {
+					this.add('-ability', pokemon, 'Intimidate', 'boost');
+					activated = true;
+				}
+				if (target.volatiles['substitute']) {
+					this.add('-immune', target);
+				} else {
+					this.boost({atk: -1}, target, pokemon, null, true);
+				}
+			}
+		},
+		name: "Derision",
+		rating: 4.5,
+		num: 310,
+	},
 	airlock: {
 		onSwitchIn(pokemon) {
 			this.effectState.switchingIn = true;
