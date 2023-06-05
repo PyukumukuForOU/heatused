@@ -16,7 +16,7 @@ export const Pokedex: {[speciesid: string]: SpeciesData} = {
 		name: "Kwelly",
 		types: ["Bug", "Flying"],
 		gender: "M", 
-		baseStats: {hp: 100, atk: 70, def: 100, spa: 110, spd: 220, spe: 170},
+		baseStats: {hp: 50, atk: 35, def: 50, spa: 55, spd: 110, spe: 85},
 		abilities: {0: "One Punch"},
 		heightm: 1.4,
 		weightkg: 35.6,
